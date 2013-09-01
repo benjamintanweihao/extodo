@@ -4,7 +4,9 @@
 
 This is basically a more or less faithful port the example application of Chapter 13 of Fred Hebert's excellent [Learn You Some Erlang for Great Good!](http://learnyousomeerlang.com/) book.
 
-Notes:
+###Rough Notes:
+
+__NOTE__: What follows are my rough notes as I work through the chapter.
 
 Page 182:
 
