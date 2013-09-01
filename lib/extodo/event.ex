@@ -1,6 +1,5 @@
-defrecord State, server: nil, name: "", to_go: 0
-
 defmodule Extodo.Event do
+  defrecord State, server: nil, name: "", to_go: 0
   #############
   # INTERFACE #
   #############
@@ -32,7 +31,7 @@ defmodule Extodo.Event do
       { ref, :ok } -> 
         Process.demonitor(ref, [:flush])
         :ok
-      { :DOWN, ref, :process, pid, _reason } ->
+      { :DOWN, _ref, :process, _pid, _reason } ->
         :ok
     end
   end

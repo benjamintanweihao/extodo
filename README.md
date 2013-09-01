@@ -49,9 +49,15 @@ iex> Extodo.Event.cancel(pid)
 Page 186
 
 ```
-iex> pid = Extodo.Event.start("Drink Beer", :calendar.local_time)
-#PID<0.105.0>
+iex>   #PID<0.105.0>
 iex> flush
 {:done, "Drink Beer"}
 :ok
+```
+Page 194
+
+```
+Extodo.EventServer.start
+Extodo.EventServer.subscribe(self)
+
 ```
