@@ -21,6 +21,8 @@ defmodule Extodo.EventServer do
   end
 
   def subscribe(pid) do
+    IO.puts "Subscribing ..."
+
     ref = Process.whereis(__MODULE__) |> Process.monitor
     __MODULE__ <- { self, ref, { :subscribe, pid } }
 
@@ -35,11 +37,13 @@ defmodule Extodo.EventServer do
   end
 
   def add_event(name, description, time_out) do
+    IO.puts "Adding Event ... #{name} #{description}"
+
     ref = make_ref
     __MODULE__ <- { self, ref, { :add, name, description, time_out } }
 
     receive do
-      { _ref, msg } -> msg
+      { ref, msg } -> msg
     after 5000 ->
       { :error, :timeout }
     end
@@ -79,7 +83,7 @@ defmodule Extodo.EventServer do
             new_events = :orddict.store(name, Event[name: name,
                                              description: description,
                                                      pid: event_pid,
-                                                 timeout: time_out])
+                                                 timeout: time_out], state.events)
             pid <- { msg_ref, :ok }
             loop(State[events: new_events])
           false ->
@@ -140,18 +144,12 @@ defmodule Extodo.EventServer do
     false
   end
 
-  def valid_time({H,M,S}) do
-    valid_time(H,M,S)
+  def valid_time({ h, m, s }) do
+    valid_time(h, m, s)
   end
 
-  def valid_time(H,M,S) when H >= 0 and H < 24 and 
-                             M >= 0 and M < 60 and 
-                             S >= 0 and S < 60 do
-    true
-  end
-
-  def valid_time(_,_,_) do
-    false
+  def valid_time(h, m, s) do
+    Enum.member?(0..24, h) and Enum.member?(0..60, m) and Enum.member?(0..60, s)
   end
 
   def send_to_clients(msg, client_dict) do

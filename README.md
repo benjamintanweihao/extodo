@@ -59,5 +59,6 @@ Page 194
 ```
 Extodo.EventServer.start
 Extodo.EventServer.subscribe(self)
+Extodo.EventServer.add_event("Hey There", "test", {{2022, 1, 1}, {1, 1, 1}})
 
 ```
