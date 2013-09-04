@@ -48,8 +48,7 @@ defmodule Extodo.Event do
           # This message is sent to EventServer
           server <- { :done, state.name }
         _ ->
-          new_state = state.to_go next
-          loop(new_state) 
+          loop(state.to_go next)
       end
     end
   end

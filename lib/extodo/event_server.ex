@@ -77,12 +77,10 @@ defmodule Extodo.EventServer do
       { pid, msg_ref, { :subscribe, client } } -> 
         ref = Process.monitor(client)
         new_clients = :orddict.store(ref, client, state.clients)
-    
-        IO.puts "Received subscribed. Here's the client list:"
-        IO.inspect new_clients
 
         pid <- { msg_ref, :ok }
-        loop(State[clients: new_clients])
+
+        loop(state.clients new_clients)
         
       { pid, msg_ref, { :add, name, description, time_out } } -> 
         case valid_datetime(time_out) do
@@ -94,8 +92,7 @@ defmodule Extodo.EventServer do
                                                  timeout: time_out], state.events)
             pid <- { msg_ref, :ok }
 
-            new_state = state.events new_events
-            loop(new_state)
+            loop(state.events new_events)
 
           false ->
             pid <- { msg_ref, { :error, :bad_timeout } }
@@ -112,8 +109,7 @@ defmodule Extodo.EventServer do
                  end
         pid <- { :msg_ref, :ok }
   
-        new_state = state.events events
-        loop(new_state)
+        loop(state.events events)
 
       { :done, name } ->
         IO.puts "Received :done"
@@ -126,8 +122,8 @@ defmodule Extodo.EventServer do
             send_to_clients({ :done, e.name, e.description }, state.clients )
 
             new_events = :orddict.erase(name, state.events)
-            new_state  = state.events new_events
-            loop(new_state)
+            loop(state.events new_events)
+
           :error ->
             # This may happen if we cancel an event and it fires at the same time
             loop(state)
@@ -137,8 +133,7 @@ defmodule Extodo.EventServer do
         exit(:shutdown) 
     
       { :DOWN, ref, :process, _pid, _reason } ->
-        new_state = state.clients :orddict.erase(ref, state.clients)     
-        loop(new_state)     
+        loop(state.clients :orddict.erase(ref, state.clients))
     
       :code_change ->
         __MODULE__.loop(state)  
