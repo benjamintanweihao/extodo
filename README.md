@@ -57,8 +57,8 @@ iex> flush
 Page 194
 
 ```
-Extodo.EventServer.start
+Extodo.EventServer.start_link # Note to self. Why you cannot start_link a second time? Because a process name can only be used once. Duh.
 Extodo.EventServer.subscribe(self)
-Extodo.EventServer.add_event("Hey There", "test", {{2022, 1, 1}, {1, 1, 1}})
+Extodo.EventServer.add_event("Hey There", "test", {{2013, 9, 5}, {0, 30, 00}})
 
 ```

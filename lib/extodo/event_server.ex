@@ -1,5 +1,5 @@
 defmodule Extodo.EventServer do
-  defrecord State, events: nil, clients: nil 
+  defrecord State, events: :orddict.new, clients: :orddict.new 
   defrecord Event, name: "", description: "", pid: nil, timeout: {{1970,1,1},{0,0,0}}
 
   ########################################
@@ -27,9 +27,9 @@ defmodule Extodo.EventServer do
     __MODULE__ <- { self, ref, { :subscribe, pid } }
 
     receive do
-      { ref, :ok } ->
+      { ^ref, :ok } ->
         { :ok, ref }
-      { :DOWN, _ref, :process, _pid, reason } ->
+      { :DOWN, ^ref, :process, _pid, reason } ->
         { :error, reason }
       after 5000 ->
         { :error, :timeout }
@@ -43,7 +43,7 @@ defmodule Extodo.EventServer do
     __MODULE__ <- { self, ref, { :add, name, description, time_out } }
 
     receive do
-      { ref, msg } -> msg
+      { ^ref, msg } -> msg
     after 5000 ->
       { :error, :timeout }
     end
@@ -53,7 +53,7 @@ defmodule Extodo.EventServer do
     ref = make_ref
     __MODULE__ <- { self, ref, { :cancel, name } }
     receive do
-      { _ref, :ok } -> :ok
+      { ^ref, :ok } -> :ok
     after 5000 ->
       { :error, :timeout }
     end
@@ -69,10 +69,18 @@ defmodule Extodo.EventServer do
   end
 
   def loop(state) do
+    IO.puts "Just looooopppeeed"
+    IO.puts "What is state?"
+    IO.inspect state
+
     receive do
       { pid, msg_ref, { :subscribe, client } } -> 
         ref = Process.monitor(client)
         new_clients = :orddict.store(ref, client, state.clients)
+    
+        IO.puts "Received subscribed. Here's the client list:"
+        IO.inspect new_clients
+
         pid <- { msg_ref, :ok }
         loop(State[clients: new_clients])
         
@@ -85,7 +93,10 @@ defmodule Extodo.EventServer do
                                                      pid: event_pid,
                                                  timeout: time_out], state.events)
             pid <- { msg_ref, :ok }
-            loop(State[events: new_events])
+
+            new_state = state.events new_events
+            loop(new_state)
+
           false ->
             pid <- { msg_ref, { :error, :bad_timeout } }
             loop(state)
@@ -100,14 +111,23 @@ defmodule Extodo.EventServer do
                      state.events
                  end
         pid <- { :msg_ref, :ok }
-        loop(State[events: events])
+  
+        new_state = state.events events
+        loop(new_state)
 
       { :done, name } ->
+        IO.puts "Received :done"
+
         case :orddict.find(name, state.events) do
           { :ok, e } ->
-            send_to_clients({ :done, e.event.name, e.event.description }, state.clients )
+            IO.puts "WHAT IS THE STATE?"
+            IO.inspect state
+
+            send_to_clients({ :done, e.name, e.description }, state.clients )
+
             new_events = :orddict.erase(name, state.events)
-            loop(State[events: new_events])
+            new_state  = state.events new_events
+            loop(new_state)
           :error ->
             # This may happen if we cancel an event and it fires at the same time
             loop(state)
@@ -117,7 +137,8 @@ defmodule Extodo.EventServer do
         exit(:shutdown) 
     
       { :DOWN, ref, :process, _pid, _reason } ->
-        loop(State[clients: :orddict.erase(ref, state.clients)])     
+        new_state = state.clients :orddict.erase(ref, state.clients)     
+        loop(new_state)     
     
       :code_change ->
         __MODULE__.loop(state)  
@@ -129,6 +150,7 @@ defmodule Extodo.EventServer do
   end
 
   def init do 
+    IO.puts "Initializing ...."
     loop(State[events: :orddict.new, clients: :orddict.new])
   end
   
@@ -153,7 +175,17 @@ defmodule Extodo.EventServer do
   end
 
   def send_to_clients(msg, client_dict) do
+    IO.puts "Sending to clients ..."
+    IO.inspect client_dict
     :orddict.map(fn(_ref, pid) -> pid <- msg end, client_dict)
   end 
 
+  def listen(delay) do
+    receive do
+      m = { :done, _name, _description } -> 
+            [m|listen(0)]
+    after delay * 1000 ->
+      []
+    end
+  end
 end

@@ -28,7 +28,7 @@ defmodule Extodo.Event do
     pid <- { self, ref, :cancel }
 
     receive do
-      { ref, :ok } -> 
+      { ^ref, :ok } -> 
         Process.demonitor(ref, [:flush])
         :ok
       { :DOWN, _ref, :process, _pid, _reason } ->
@@ -40,14 +40,16 @@ defmodule Extodo.Event do
   #       `server` in the 'after' block.
   def loop(state = State[server: server, to_go: [t|next]]) do
     receive do
-      { server, ref, :cancel } -> 
+      { ^server, ref, :cancel } -> 
         server <- { ref, :ok } 
     after t*1000 ->
       case next do
         [] -> 
+          # This message is sent to EventServer
           server <- { :done, state.name }
         _ ->
-          loop(State[to_go: next]) 
+          new_state = state.to_go next
+          loop(new_state) 
       end
     end
   end
@@ -68,6 +70,4 @@ defmodule Extodo.Event do
     limit = 49*24*60*60
     [rem(n, limit) | List.duplicate(limit, div(n, limit))]
   end
-  
 end
-
