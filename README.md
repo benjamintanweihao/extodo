@@ -59,6 +59,33 @@ Page 194
 ```
 Extodo.EventServer.start_link # Note to self. Why you cannot start_link a second time? Because a process name can only be used once. Duh.
 Extodo.EventServer.subscribe(self)
+# Note: All dates must be in the future, otherwise the calculated timeout is a negative value.
 Extodo.EventServer.add_event("Hey There", "test", {{2013, 9, 5}, {0, 30, 00}})
+```
 
+Page 195
+```
+iex> sup_pid = Extodo.Supervisor.start(Extodo.EventServer, [])
+# Notice that the sup_pid and event server pid are different. Obviously.
+iex> Process.whereis(Extodo.EventServer)
+iex> Process.exit(Process.whereis(Extodo.EventServer), :die)
+Process #PID<0.70.0> exited for reason die.
+# And … Keep going …
+iex> Process.exit(Process.whereis(Extodo.EventServer), :'live and let die')
+Process #PID<0.71.0> exited for reason live and let die.
+iex> Process.exit(Process.whereis(Extodo.EventServer), :kaboom)
+Process #PID<0.72.0> exited for reason kaboom.
+```
+But if we kill the supervisor:
+
+```
+# Do you know why we can't do this? Because it is not registered!
+iex> Process.whereis(Extodo.Supervisor)
+nil
+Process.whereis(sup_pid)
+iex> Process.exit(sup_pid, :shutdown)
+true
+# Kill the supervisor, and the event server process gets killed too.
+iex> Process.whereis(Extodo.EventServer)
+nil
 ```
